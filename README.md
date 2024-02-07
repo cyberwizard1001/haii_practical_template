@@ -12,7 +12,6 @@ To use this template for your own project in this course, follow these steps:
 
 - Replace the provided machine learning model with your own model.
 - Customize the user feedback elements according to your project requirements.
-How 
 
 ### Need Help?
 
