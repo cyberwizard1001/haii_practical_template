@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,11 +16,22 @@
             margin: 0;
             font-family: Arial, sans-serif;
         }
+
         video {
             max-width: 90%;
-            border-radius: 15px; /* Rounded corners */
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            border-radius: 15px;
+            /* Rounded corners */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
+
+        #captured-image {
+            max-width: 90%;
+            border-radius: 15px;
+            /* Rounded corners */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: none; /* Hide the captured image initially */
+        }
+
         button {
             margin: 20px 0;
             padding: 10px 20px;
@@ -30,98 +42,132 @@
             background-color: #007bff;
             color: white;
         }
+
         p {
             font-size: 18px;
             color: #333;
         }
     </style>
 </head>
+
 <body>
 
-<h2>HAT OR NOT???</h2>
+    <h2>WHAT AM I HOLDING?</h2>
 
-<video id="video" autoplay playsinline></video>
-<!--<button onclick="switchCamera()">Switch Camera</button>-->
-<p id="result"></p>
+    <video id="video" autoplay playsinline></video>
+    <img id="captured-image" alt="Captured Image">
+    <button onclick="captureImage()">Capture Image</button>
+    <p id="result"></p>
 
-<script>
-    ////////////////////////////////
-    ////////    SPECIFY PARAMETERS
-    ////////////////////////////////
-    const PROCESSING_SPEED = 2000;
-    const CLASSES = ["no", "hat"];
-    const MODEL_FOLDER = 'model/model.json';
-    // const mode = 'environment' // back camera
-    const camera_mode = 'user' // front camera
+    <script>
+        ////////////////////////////////
+        ////////    SPECIFY PARAMETERS
+        ////////////////////////////////
+        const PROCESSING_SPEED = 2000;
+        const CLASSES = [
+            'RANTAC 300',
+            'Livogen -Z',
+            'BECADEXAMIN - MULTIVITAMIN',
+            'MEFTAL SPAS',
+            'PAN D',
+            'D-RISE 60K',
+            'Allegra',
+            'AUGMENTIN 625 DUO',
+            'PANTOCID DSR',
+            'ZERODOL P',
+            'DOLO 650'
+        ];
+        const MODEL_FOLDER = 'model/model.json';
+        // const mode = 'environment' // back camera
+        const camera_mode = 'user'; // front camera
 
-    let currentStream;
+        let currentStream;
 
-    ////////////////////////////////
-    ////////    USE THIS FUNCTION FOR INTERACTIONS
-    ////////////////////////////////
-    function interaction(predictedClass, classScores) {
-        console.log(classScores);
-        document.getElementById("result").innerHTML = `Prediction: ${predictedClass}, Confidence: ${classScores[0]}`;
-        document.body.style.backgroundColor = predictedClass === "hat" ? "red" : "white";
-    }
-
-    ////////////////////////////////
-    ////////    VIDEO CAPTURE AND PREDICTION LOGIC
-    ////////////////////////////////
-    async function startVideo(facingMode = 'user') {
-        // Stop any existing video tracks to free up the camera
-        if (currentStream) {
-            currentStream.getTracks().forEach(track => {
-                track.stop();
-            });
+        ////////////////////////////////
+        ////////    USE THIS FUNCTION FOR INTERACTIONS
+        ////////////////////////////////
+        function interaction(predictedClass, classScores) {
+            console.log(classScores);
+            document.getElementById("result").innerHTML = `Prediction: ${predictedClass}, Confidence: ${classScores[0]}`;
+            document.body.style.backgroundColor = predictedClass === "Allegra" ? "red" : "white";
         }
 
-        try {
-            // Request access to the camera with the specified facing mode
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode }
-            });
+        ////////////////////////////////
+        ////////    VIDEO CAPTURE AND PREDICTION LOGIC
+        ////////////////////////////////
+        async function startVideo(facingMode = 'user') {
+            // Stop any existing video tracks to free up the camera
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => {
+                    track.stop();
+                });
+            }
 
+            try {
+                // Request access to the camera with the specified facing mode
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode
+                    }
+                });
+
+                const videoElement = document.getElementById('video');
+                videoElement.srcObject = stream;
+                currentStream = stream;
+
+                // Return a promise that resolves when the video is ready to play
+                return new Promise(resolve => {
+                    videoElement.onloadedmetadata = () => {
+                        resolve(videoElement);
+                    };
+                });
+            } catch (err) {
+                console.error('Error accessing the camera:', err);
+            }
+        }
+
+        async function startPredicting() {
+            const model = await tf.loadGraphModel(MODEL_FOLDER);
+            setInterval(async () => {
+                const example = tf.browser.fromPixels(video).cast('float32');
+                const prediction = await model.predict(example.expandDims());
+                const classScores = await prediction.data();
+                const maxScoreId = classScores.indexOf(Math.max(...classScores));
+                const predictedClass = CLASSES[maxScoreId];
+
+                interaction(predictedClass, classScores);
+            }, PROCESSING_SPEED);
+        }
+
+        async function captureImage() {
             const videoElement = document.getElementById('video');
-            videoElement.srcObject = stream;
-            currentStream = stream;
+            const capturedImage = document.getElementById('captured-image');
 
-            // Return a promise that resolves when the video is ready to play
-            return new Promise(resolve => {
-                videoElement.onloadedmetadata = () => {
-                    resolve(videoElement);
-                };
-            });
-        } catch (err) {
-            console.error('Error accessing the camera:', err);
+            // Hide video and show captured image
+            videoElement.style.display = 'none';
+            capturedImage.style.display = 'block';
+
+            const canvas = document.createElement('canvas');
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+            capturedImage.src = canvas.toDataURL();
         }
-    }
 
+        // function switchCamera() {
+        //     if (currentStream) {
+        //         currentStream.getTracks().forEach(track => track.stop());
+        //     }
+        //     startVideo('user');
+        // }
 
-    async function startPredicting() {
-        const model = await tf.loadGraphModel(MODEL_FOLDER);
-        setInterval(async () => {
-            const example = tf.browser.fromPixels(video).cast('float32');
-            const prediction = await model.predict(example.expandDims());
-            const classScores = await prediction.data();
-            const maxScoreId = classScores.indexOf(Math.max(...classScores));
-            const predictedClass = CLASSES[maxScoreId];
-
-            interaction(predictedClass, classScores);
-        }, PROCESSING_SPEED);
-    }
-
-    // function switchCamera() {
-    //     if (currentStream) {
-    //         currentStream.getTracks().forEach(track => track.stop());
-    //     }
-    //     startVideo('user');
-    // }
-
-    document.addEventListener("DOMContentLoaded", function() {
-        startVideo(camera_mode);
-        startPredicting();
-    });
-</script>
+        document.addEventListener("DOMContentLoaded", function() {
+            startVideo(camera_mode);
+            startPredicting();
+        });
+    </script>
 </body>
+
 </html>
