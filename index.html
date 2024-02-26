@@ -4,66 +4,371 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Model Prediction</title>
+    <title>Airport Medicine Scanner</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <link rel="stylesheet" href="https://ui5.sap.com/sdk/resources/sap-ui-core.js">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body {
             display: flex;
             flex-direction: column;
+            justify-content: start;
+            min-width: 100%;
             align-items: center;
-            justify-content: center;
             min-height: 100vh;
+            width: 100%;
             margin: 0;
             font-family: Arial, sans-serif;
+            background-color: white;
         }
 
-        video {
-            max-width: 90%;
-            border-radius: 15px;
-            /* Rounded corners */
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        .elements {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-around;
+            align-items: center;
+            width: 100%;
         }
 
-        #captured-image {
-            max-width: 90%;
-            border-radius: 15px;
-            /* Rounded corners */
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            display: none; /* Hide the captured image initially */
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: start;
+            justify-content: center;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 10px;
         }
 
-        button {
-            margin: 20px 0;
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            border: none;
+        #passenger-details {
+            width: 30%;
+            margin-right: 20px;
+            margin-left: 20px;
+            padding-left: 2%;
+            text-align: left;
+            font-size: 20px;
+            /* Increase font size for passenger details */
+            line-height: 1.25;
+            /* Increase line height for better readability */
+        }
+
+        #passenger-details>div {
+            margin-bottom: 10px;
+            /* Add margin to create space between details */
+            border-bottom: 1px solid #ccc;
+            /* Add a thin grey line as a separator */
+            padding-bottom: 10px;
+            /* Add padding for better spacing */
+            width: 100%;
+        }
+
+        #passenger-details p {
+            margin: 5px 0;
+            /* Add some vertical spacing between paragraphs */
+            font-size: 20px;
+            /* Increase font size for passenger details */
+            font-weight: bolder;
+        }
+
+        #passenger-details strong {
+            font-size: 15px;
+            /* Decrease font size for headings */
+            color: #666;
+            /* Change heading color to grey */
+        }
+
+
+
+        #camera-interface {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .button-container {
+            display: flex;
+            align-items: center;
+            margin-top: 20px;
+            /* Adjust margin as needed */
+        }
+
+        #medicine-lists {
+            width: 20%;
+            margin-right: 20px;
+        }
+
+        #video-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            position: relative;
+            width: 100%;
+            min-width: 100%;
+        }
+
+        #video {
+            max-width: 100%;
+            height: auto;
+        }
+
+        #medicine-lists {
+            width: 20%;
+        }
+
+        #approved-list,
+        #illegal-list {
+            width: 100%;
+        }
+
+        #approved-title,
+        #illegal-title {
+            width: 100%;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: space-between;
+            justify-content: space-between;
+        }
+
+        .medicine-item {
+            width: 100%;
+            padding: 5px;
+            margin-bottom: 20px;
             border-radius: 5px;
-            background-color: #007bff;
-            color: white;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #ccc;
+            /* Add grey line */
+        }
+
+        .medicine-item i {
+            margin-right: 10px;
+        }
+
+        .approved {
+            background-color: white;
+        }
+
+        .illegal {
+            background-color: white;
+        }
+
+        .error {
+            background-color: white;
         }
 
         p {
             font-size: 18px;
             color: #333;
         }
+
+        #approved-title,
+        #illegal-title {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .icon {
+            margin-right: 10px;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: black;
+            padding: 10px 20px;
+            width: 100%;
+        }
+
+        .bottom-nav .button-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 20%;
+        }
+
+        .nav-button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            color: white;
+            background-color: black;
+            border: none;
+            cursor: pointer;
+            border: solid 1px #D0D1D2;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .nav-button:hover {
+            background-color: white;
+            color: #005AFF;
+        }
+
+        .selected {
+            background-color: white;
+            color: #005AFF;
+        }
+
+        .vertical-divider {
+            width: 2px;
+            height: 20px;
+            /* Adjust height as needed */
+            background-color: #ccc;
+            /* Grey color */
+            margin: 0 10px;
+            /* Adjust margin for spacing */
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 90%;
+            /* Adjusted width */
+            margin-top: 10px;
+            /* Added margin top */
+        }
+
+        .icon-div {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 5%;
+            padding-bottom: 10%;
+        }
+
+        .prediction-button {
+            padding: 10px 20px;
+            margin: 5px;
+            /* Add margin */
+            border-radius: 8px;
+            padding-top: 5%;
+            padding-bottom: 5%;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+            width: 22%;
+            /* Adjusted width */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .prediction-button:hover {
+            background-color: black;
+            color: white;
+        }
+
+        .prediction-button i {
+            width: 20%;
+            /* Adjusted width */
+        }
     </style>
 </head>
 
 <body>
+    <div class="elements">
+        <div class="container" id="passenger-details">
+            <h2>Passenger Details</h2>
+            <div>
+                <p><strong>Full Name</strong></p>
+                <p>Michelle MacAllister</p>
+            </div>
+            <div>
+                <p><strong>Passport Number</strong></p>
+                <p>YT541672</p>
+            </div>
+            <div>
+                <p><strong>Country</strong></p>
+                <p>United States of America</p>
+            </div>
+            <div>
+                <p><strong>E-Ticket Number</strong></p>
+                <p>243535656577</p>
+            </div>
+            <div>
+                <p><strong>Flight Number</strong></p>
+                <p>AA181</p>
+            </div>
+            <div>
+                <p><strong>Date of Travel</strong></p>
+                <p>27 Feb 2024</p>
+            </div>
+            <div>
+                <p><strong>Seat Number</strong></p>
+                <p>45B</p>
+            </div>
+            <div>
+                <p><strong>Destination</strong></p>
+                <p>Amsterdam, Netherlands</p>
+            </div>
+        </div>
 
-    <h2>WHAT AM I HOLDING?</h2>
 
-    <video id="video" autoplay playsinline></video>
-    <img id="captured-image" alt="Captured Image">
-    <button onclick="captureImage()">Capture Image</button>
-    <p id="result"></p>
+        <div class="container" id="camera-interface">
+            <div id="video-container">
+                <video id="video" autoplay playsinline></video>
+            </div>
+            <div class="button-container">
+                <button class="prediction-button">
+                    <div class="icon-div"><i class="fa-solid fa-qrcode fa-lg"></i></div>
+                    <div>Scan<br>boarding pass</div>
+                </button>
+                <button class="prediction-button">
+                    <div class="icon-div"><i class="fa-solid fa-pills fa-lg"></i></div>
+                    <div>Scan<br>medicines</div>
+                </button>
+                <button class="prediction-button">
+                    <div class="icon-div"><i class="fas fa-passport fa-lg"></i></div>
+                    <div>Scan<br>passport<div>
+                </button>
+                <div class="vertical-divider"></div>
+                <button class="prediction-button">
+                    <div class="icon-div"><i class="fa-solid fa-receipt fa-lg"></i></div>
+                    <div>Send<br>report</div>
+                </button>
+            </div>
+        </div>
+
+        <div class="container" id="medicine-lists">
+            <div id="approved-list">
+                <div id="approved-title">Approved Medicines <i class="fa-solid fa-pen"></i></div>
+            </div>
+            <div id="illegal-list">
+                <div id="illegal-title">Rejected/Warnings<i class="fa-solid fa-pen"></i></div>
+            </div>
+        </div>
+    </div>
+
+
+    <div>
+        <div class="bottom-nav">
+            <div>
+                <p class="airport-name" style="color: white; margin: 0">Newcastle Airport</p>
+                <p class="airport-name" style="color: #FDBB30; margin: 0">Your Airport</p>
+            </div>
+            <div class="button-container">
+                <button class="nav-button selected"><i class="fas fa-home"></i> Home</button>
+                <span style="padding: 0 10px;"></span>
+                <button class="nav-button"><i class="fas fa-cog"></i> Settings</button>
+            </div>
+            <div style="padding-right: 10; margin-right: 10;">
+                <p class="date-time" style="color: white; margin: 0;">February 27, 2024</p>
+                <p class="date-time" style="color: white; margin: 0;">12:00 PM</p>
+            </div>
+        </div>
+    </div>
 
     <script>
         ////////////////////////////////
         ////////    SPECIFY PARAMETERS
         ////////////////////////////////
-        const PROCESSING_SPEED = 2000;
+        const PROCESSING_SPEED = 3000;
         const CLASSES = [
             'RANTAC 300',
             'Livogen -Z',
@@ -77,9 +382,29 @@
             'ZERODOL P',
             'DOLO 650'
         ];
-        const MODEL_FOLDER = 'model/model.json';
-        // const mode = 'environment' // back camera
-        const camera_mode = 'user'; // front camera
+
+        const approved = [
+            'RANTAC 300',
+            'Livogen -Z',
+            'BECADEXAMIN - MULTIVITAMIN',
+            'MEFTAL SPAS',
+            'PAN D',
+        ];
+
+        const unapproved = [
+            'D-RISE 60K',
+            'Allegra',
+            'AUGMENTIN 625 DUO',
+        ];
+
+        const illegal = [
+            'PANTOCID DSR',
+            'ZERODOL P',
+            'DOLO 650'
+        ]
+
+        const MODEL_FOLDER = 'https://cyberwizard1001.github.io/model/model.json';
+        const camera_mode = 'environment'; // back camera
 
         let currentStream;
 
@@ -87,15 +412,97 @@
         ////////    USE THIS FUNCTION FOR INTERACTIONS
         ////////////////////////////////
         function interaction(predictedClass, classScores) {
-            console.log(classScores);
-            document.getElementById("result").innerHTML = `Prediction: ${predictedClass}, Confidence: ${classScores[0]}`;
-            document.body.style.backgroundColor = predictedClass === "Allegra" ? "red" : "white";
+            const medicineLabel = document.getElementById("medicine-label");
+            medicineLabel.textContent = predictedClass;
+            updateMedicineList(predictedClass);
         }
+
+        // function updateMedicineList(predictedClass) {
+        //     const medicineList = determineMedicineList(predictedClass);
+        //     const listItem = document.createElement('div');
+        //     const icon = document.createElement('i');
+        //     icon.className = determineIconClass(predictedClass);
+        //     listItem.textContent = predictedClass;
+        //     listItem.className = 'medicine-item ' + predictedClass;
+        //     listItem.append(icon);
+        //     medicineList.appendChild(listItem);
+        // }
+
+        function determineMedicineList(predictedClass) {
+            if (CLASSES.includes(predictedClass)) {
+                return document.getElementById("approved-list");
+            } else {
+                return document.getElementById("illegal-list");
+            }
+        }
+
+        function determineIconClass(predictedClass) {
+            switch (predictedClass) {
+                case 'forbidden':
+                    return 'fas fa-ban'; // Font Awesome icon for forbidden
+                case 'warning':
+                    return 'fas fa-exclamation-triangle'; // Font Awesome icon for warning
+                default:
+                    return '';
+            }
+        }
+
+        function determineMedicineClass(predictedClass) {
+            if (approved.includes(predictedClass)) {
+                // Approved medicine
+                return 'approved';
+            } else if (unapproved.includes(predictedClass)) {
+                // Error class - not illegal but not allowed in the country
+                return 'unapproved';
+            } else {
+                // Illegal medicine
+                return 'illegal';
+            }
+        }
+
+        function updateMedicineList(predictedClass) {
+            if (predictedClass === undefined || predictedClass === 'human') {
+                // Skip adding undefined or human classes to the list
+                return;
+            }
+
+            const medicineList = document.getElementById("approved-list");
+            const illegalList = document.getElementById("illegal-list");
+            const listItem = document.createElement('div');
+            const icon = document.createElement('i');
+            if (determineMedicineClass(predictedClass) === 'illegal') {
+                icon.className = 'icon fa-solid fa-xmark';
+            }
+            else if (determineMedicineClass(predictedClass) === "approved") {
+                icon.className = 'icon fa-solid fa-check'
+            }
+            else if (determineMedicineClass(predictedClass) === "unapproved") {
+                icon.className = 'icon fa-solid fa-triangle-exclamation'
+            }
+
+
+            listItem.textContent = predictedClass;
+            listItem.className = 'medicine-item ' + determineMedicineClass(predictedClass);
+            listItem.append(icon);
+
+
+            if (determineMedicineClass(predictedClass) === 'approved') {
+                medicineList.appendChild(listItem);
+            } else if (determineMedicineClass(predictedClass) === 'illegal') {
+                illegalList.appendChild(listItem);
+            } else {
+                // Unapproved medicine, tag as orange
+                listItem.className = 'medicine-item unapproved';
+                listItem.style.backgroundColor = '#ffd699'; // Orange color
+                medicineList.appendChild(listItem);
+            }
+        }
+
 
         ////////////////////////////////
         ////////    VIDEO CAPTURE AND PREDICTION LOGIC
         ////////////////////////////////
-        async function startVideo(facingMode = 'user') {
+        async function startVideo(facingMode = camera_mode) {
             // Stop any existing video tracks to free up the camera
             if (currentStream) {
                 currentStream.getTracks().forEach(track => {
@@ -139,33 +546,14 @@
             }, PROCESSING_SPEED);
         }
 
-        async function captureImage() {
-            const videoElement = document.getElementById('video');
-            const capturedImage = document.getElementById('captured-image');
-
-            // Hide video and show captured image
-            videoElement.style.display = 'none';
-            capturedImage.style.display = 'block';
-
-            const canvas = document.createElement('canvas');
-            canvas.width = videoElement.videoWidth;
-            canvas.height = videoElement.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-
-            capturedImage.src = canvas.toDataURL();
-        }
-
-        // function switchCamera() {
-        //     if (currentStream) {
-        //         currentStream.getTracks().forEach(track => track.stop());
-        //     }
-        //     startVideo('user');
-        // }
-
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function () {
             startVideo(camera_mode);
             startPredicting();
+            // Populate initial sample medicines
+            updateMedicineList('RANTAC 300');
+            updateMedicineList('Allegra');
+            updateMedicineList('ZERODOL P');
+            updateMedicineList('DOLO 650');
         });
     </script>
 </body>
